@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE rdf:RDF [
+  <!ENTITY owl "http://www.w3.org/2002/07/owl#" >
+  <!ENTITY xsd "http://www.w3.org/2001/XMLSchema#" >
+  <!ENTITY rdfs "http://www.w3.org/2000/01/rdf-schema#" >
+  <!ENTITY rdf "http://www.w3.org/1999/02/22-rdf-syntax-ns#" >
+]>
+<rdf:RDF xmlns="http://www.semanticweb.org/rizon4s/state-machine#"
+     xml:base="http://www.semanticweb.org/rizon4s/state-machine"
+     xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
+     xmlns:owl="http://www.w3.org/2002/07/owl#"
+     xmlns:xsd="http://www.w3.org/2001/XMLSchema#"
+     xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+     xmlns:sm="http://www.semanticweb.org/rizon4s/state-machine#">
+
+    <owl:Ontology rdf:about="http://www.semanticweb.org/rizon4s/state-machine">
+        <rdfs:comment>Flexiv 机械臂 PICK_AND_PLACE 状态机本体。将工作流（PICK_AND_PLACE_WORKFLOW）的每一步建模为 States 类的一个个体，Success 指向下一步，最后一步回到 IDLE。</rdfs:comment>
+    </owl:Ontology>
+
+    <!-- ============ 类：States ============ -->
+    <owl:Class rdf:about="http://www.semanticweb.org/rizon4s/state-machine#States"/>
+
+    <!-- ============ 对象属性 ============ -->
+
+    <!-- Success：成功后进入的下一个状态 -->
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/rizon4s/state-machine#Success">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#States"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#States"/>
+        <rdfs:comment>动作执行成功（收到 SUCCESS 回执）后进入的下一个状态。</rdfs:comment>
+    </owl:ObjectProperty>
+
+    <!-- Failure：失败后回到的状态 -->
+    <owl:ObjectProperty rdf:about="http://www.semanticweb.org/rizon4s/state-machine#Failure">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#States"/>
+        <rdfs:range rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#States"/>
+        <rdfs:comment>动作执行失败（收到 FAILURE 回执）后回到的状态。</rdfs:comment>
+    </owl:ObjectProperty>
+
+    <!-- ============ 数据属性：Actions（命令话题 + 消息内容） ============ -->
+    <owl:DatatypeProperty rdf:about="http://www.semanticweb.org/rizon4s/state-machine#Actions">
+        <rdfs:domain rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#States"/>
+        <rdfs:range rdf:resource="http://www.w3.org/2001/XMLSchema#string"/>
+        <rdfs:comment>该状态下发布到命令话题的完整内容（话题名 + 消息类型与字段）。</rdfs:comment>
+    </owl:DatatypeProperty>
+
+    <!-- ============ 个体：PICK_AND_PLACE 的 9 步 + IDLE ============ -->
+
+    <!-- Step 1: Move above object -->
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/rizon4s/state-machine#Step1_MoveAboveObject">
+        <rdf:type rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#States"/>
+        <rdfs:label>Step1_MoveAboveObject</rdfs:label>
+        <rdfs:comment>第 1 步：移动到工件上方（z=0.140）。</rdfs:comment>
+        <Actions rdf:datatype="http://www.w3.org/2001/XMLSchema#string">/rizon4s/pick_place_waypoint_command : neo4j_msgs/Actions{type=MOVE, pose=(0.380,0.020,0.140,0.0,1.0,0.0,0.0), grasp_state=OPEN, action_state=RUNNING}</Actions>
+        <Success rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#Step2_MoveDownToObject"/>
+        <Failure rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#IDLE"/>
+    </owl:NamedIndividual>
+
+    <!-- Step 2: Move down to object -->
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/rizon4s/state-machine#Step2_MoveDownToObject">
+        <rdf:type rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#States"/>
+        <rdfs:label>Step2_MoveDownToObject</rdfs:label>
+        <rdfs:comment>第 2 步：下降到抓取高度（z=0.042）。</rdfs:comment>
+        <Actions rdf:datatype="http://www.w3.org/2001/XMLSchema#string">/rizon4s/pick_place_waypoint_command : neo4j_msgs/Actions{type=MOVE, pose=(0.380,0.020,0.042,0.0,1.0,0.0,0.0), grasp_state=OPEN, action_state=RUNNING}</Actions>
+        <Success rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#Step3_CloseGripper"/>
+        <Failure rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#IDLE"/>
+    </owl:NamedIndividual>
+
+    <!-- Step 3: Close gripper -->
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/rizon4s/state-machine#Step3_CloseGripper">
+        <rdf:type rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#States"/>
+        <rdfs:label>Step3_CloseGripper</rdfs:label>
+        <rdfs:comment>第 3 步：闭合夹爪（grasp_state=CLOSE）。</rdfs:comment>
+        <Actions rdf:datatype="http://www.w3.org/2001/XMLSchema#string">/rizon4s/pick_place_waypoint_command : neo4j_msgs/Actions{type=GRASP, pose=当前位姿, grasp_state=CLOSE, action_state=RUNNING}</Actions>
+        <Success rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#Step4_LiftObject"/>
+        <Failure rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#IDLE"/>
+    </owl:NamedIndividual>
+
+    <!-- Step 4: Lift object -->
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/rizon4s/state-machine#Step4_LiftObject">
+        <rdf:type rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#States"/>
+        <rdfs:label>Step4_LiftObject</rdfs:label>
+        <rdfs:comment>第 4 步：抬起工件（z=0.200）。</rdfs:comment>
+        <Actions rdf:datatype="http://www.w3.org/2001/XMLSchema#string">/rizon4s/pick_place_waypoint_command : neo4j_msgs/Actions{type=MOVE, pose=(0.380,0.020,0.200,0.0,1.0,0.0,0.0), grasp_state=CLOSE, action_state=RUNNING}</Actions>
+        <Success rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#Step5_MoveToDestination"/>
+        <Failure rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#IDLE"/>
+    </owl:NamedIndividual>
+
+    <!-- Step 5: Move to destination -->
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/rizon4s/state-machine#Step5_MoveToDestination">
+        <rdf:type rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#States"/>
+        <rdfs:label>Step5_MoveToDestination</rdfs:label>
+        <rdfs:comment>第 5 步：移动到目标点上方（z=0.200）。</rdfs:comment>
+        <Actions rdf:datatype="http://www.w3.org/2001/XMLSchema#string">/rizon4s/pick_place_waypoint_command : neo4j_msgs/Actions{type=MOVE, pose=(0.550,0.050,0.200,0.0,1.0,0.0,0.0), grasp_state=CLOSE, action_state=RUNNING}</Actions>
+        <Success rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#Step6_MoveDown"/>
+        <Failure rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#IDLE"/>
+    </owl:NamedIndividual>
+
+    <!-- Step 6: Move down -->
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/rizon4s/state-machine#Step6_MoveDown">
+        <rdf:type rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#States"/>
+        <rdfs:label>Step6_MoveDown</rdfs:label>
+        <rdfs:comment>第 6 步：下降到孔上方中间点（z=0.120）。</rdfs:comment>
+        <Actions rdf:datatype="http://www.w3.org/2001/XMLSchema#string">/rizon4s/pick_place_waypoint_command : neo4j_msgs/Actions{type=MOVE, pose=(0.550,0.050,0.120,0.0,1.0,0.0,0.0), grasp_state=CLOSE, action_state=RUNNING}</Actions>
+        <Success rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#Step7_MoveToPlacement"/>
+        <Failure rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#IDLE"/>
+    </owl:NamedIndividual>
+
+    <!-- Step 7: Move to placement height -->
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/rizon4s/state-machine#Step7_MoveToPlacement">
+        <rdf:type rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#States"/>
+        <rdfs:label>Step7_MoveToPlacement</rdfs:label>
+        <rdfs:comment>第 7 步：下降到放置高度（z=0.100）。</rdfs:comment>
+        <Actions rdf:datatype="http://www.w3.org/2001/XMLSchema#string">/rizon4s/pick_place_waypoint_command : neo4j_msgs/Actions{type=MOVE, pose=(0.550,0.050,0.100,0.0,1.0,0.0,0.0), grasp_state=CLOSE, action_state=RUNNING}</Actions>
+        <Success rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#Step8_OpenGripper"/>
+        <Failure rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#IDLE"/>
+    </owl:NamedIndividual>
+
+    <!-- Step 8: Open gripper -->
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/rizon4s/state-machine#Step8_OpenGripper">
+        <rdf:type rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#States"/>
+        <rdfs:label>Step8_OpenGripper</rdfs:label>
+        <rdfs:comment>第 8 步：张开夹爪（grasp_state=OPEN）。</rdfs:comment>
+        <Actions rdf:datatype="http://www.w3.org/2001/XMLSchema#string">/rizon4s/pick_place_waypoint_command : neo4j_msgs/Actions{type=GRASP, pose=当前位姿, grasp_state=OPEN, action_state=RUNNING}</Actions>
+        <Success rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#Step9_Retreat"/>
+        <Failure rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#IDLE"/>
+    </owl:NamedIndividual>
+
+    <!-- Step 9: Retreat -->
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/rizon4s/state-machine#Step9_Retreat">
+        <rdf:type rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#States"/>
+        <rdfs:label>Step9_Retreat</rdfs:label>
+        <rdfs:comment>第 9 步：松爪后退回（z=0.200）。成功后 workflow 结束，回到 IDLE。</rdfs:comment>
+        <Actions rdf:datatype="http://www.w3.org/2001/XMLSchema#string">/rizon4s/pick_place_waypoint_command : neo4j_msgs/Actions{type=MOVE, pose=(0.550,0.050,0.200,0.0,1.0,0.0,0.0), grasp_state=OPEN, action_state=RUNNING}</Actions>
+        <Success rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#IDLE"/>
+        <Failure rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#IDLE"/>
+    </owl:NamedIndividual>
+
+    <!-- IDLE：起点与终点 -->
+    <owl:NamedIndividual rdf:about="http://www.semanticweb.org/rizon4s/state-machine#IDLE">
+        <rdf:type rdf:resource="http://www.semanticweb.org/rizon4s/state-machine#States"/>
+        <rdfs:label>IDLE</rdfs:label>
+        <rdfs:comment>空闲状态：PICK_AND_PLACE 的起点与终点。收到 /task/command 后进入 Step1；任何一步失败也回到 IDLE。</rdfs:comment>
+        <Actions rdf:datatype="http://www.w3.org/2001/XMLSchema#string">/task/command : neo4j_msgs/Tasks{type=PICK_AND_PLACE, object_id=...}</Actions>
+    </owl:NamedIndividual>
+
+</rdf:RDF>
